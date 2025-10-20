@@ -1,0 +1,237 @@
+@page "/productos"
+@using segunda.Data  @* <-- Esto se conecta con el archivo Producto.cs *@
+
+<h3>Productos</h3>
+
+<EditForm Model="@nuevoProducto" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+
+    @* Mensaje de error personalizado para inventario duplicado *@
+    @if (!string.IsNullOrEmpty(mensajeErrorInventario))
+    {
+        <div class="alert alert-danger" role="alert">
+            @mensajeErrorInventario
+        </div>
+    }
+    
+    @*<ValidationSummary />*@
+
+    <div class="mb-3">
+        <label for="inventario" class="form-label">Inventario</label>
+        <InputNumber id="inventario" class="form-control" @bind-Value="nuevoProducto.Inventario" />
+        <ValidationMessage For="@(() => nuevoProducto.Inventario)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label for="nombre" class="form-label">Nombre</label>
+        <InputText id="nombre" class="form-control" @bind-Value="nuevoProducto.Nombre" />
+        <ValidationMessage For="@(() => nuevoProducto.Nombre)" class="text-danger" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Departamento</label>
+        <InputRadioGroup @bind-Value="nuevoProducto.Departamento">
+            <div class="form-check">
+                <InputRadio id="frutas" Value="@("Frutas")" class="form-check-input" />
+                <label class="form-check-label" for="frutas">Frutas</label>
+            </div>
+            <div class="form-check">
+                <InputRadio id="verduras" Value="@("Verduras")" class="form-check-input" />
+                <label class="form-check-label" for="verduras">Verduras</label>
+            </div>
+            <div class="form-check">
+                <InputRadio id="lacteos" Value="@("Lácteos")" class="form-check-input" />
+                <label class="form-check-label" for="lacteos">Lácteos</label>
+            </div>
+        </InputRadioGroup>
+        <ValidationMessage For="@(() => nuevoProducto.Departamento)" class="text-danger" />
+    </div>
+
+    @* Botones condicionales para Guardar, Actualizar o Cancelar *@
+    @if (modoEdicion)
+    {
+        <button type="submit" class="btn btn-primary">Actualizar</button>
+        <button type="button" class="btn btn-secondary" @onclick="CancelarEdicion">Cancelar</button>
+    }
+    else
+    {
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    }
+</EditForm>
+
+@* Botones para cambiar de vista (fuera del formulario) *@
+@if (!modoEdicion && listaProductos.Any())
+{
+    @if (mostrandoExistencias)
+    {
+        <button type="button" class="btn btn-info mt-3" @onclick="MostrarListado">Listado</button>
+    }
+    else
+    {
+        <button type="button" class="btn btn-info mt-3" @onclick="MostrarExistencias">Existencias</button>
+    }
+}
+
+
+@* Sección para mostrar la lista de productos o las existencias *@
+@if (listaProductos.Any())
+{
+    <hr />
+    @if (mostrandoExistencias)
+    {
+        <h4>Existencias por departamento</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Frutas</th>
+                    <th>Verduras</th>
+                    <th>Lácteos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@ConteoFrutas</td>
+                    <td>@ConteoVerduras</td>
+                    <td>@ConteoLacteos</td>
+                </tr>
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <h4>Listado de productos</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Inventario</th>
+                    <th>Nombre</th>
+                    <th>Departamento</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var producto in listaProductos)
+                {
+                    <tr>
+                        <td>@producto.Inventario</td>
+                        <td>@producto.Nombre</td>
+                        <td>@producto.Departamento</td>
+                        <td>
+                            @* Botón Editar *@
+                            <button class="btn btn-outline-primary btn-sm" @onclick="() => IniciarEdicion(producto)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-pencil" viewBox="0 0 16 16">
+                                    <path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207zm1.586 3L10.5 3.207 4 9.707V12h2.293z"/>
+                                </svg>
+                            </button>
+                            @* Botón Eliminar *@
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => EliminarProducto(producto)">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0z"/>
+                                    <path d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4zM2.5 3h11V2h-11z"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+
+@code {
+    private List<Producto> listaProductos = new List<Producto>();
+    private Producto nuevoProducto = new Producto();
+    private Producto? productoAEditar;
+    private bool modoEdicion = false;
+    private bool mostrandoExistencias = false;
+    private string? mensajeErrorInventario;
+
+    // Propiedades calculadas para las existencias
+    private int ConteoFrutas => listaProductos.Count(p => p.Departamento == "Frutas");
+    private int ConteoVerduras => listaProductos.Count(p => p.Departamento == "Verduras");
+    private int ConteoLacteos => listaProductos.Count(p => p.Departamento == "Lácteos");
+
+    private void HandleValidSubmit()
+    {
+        if (modoEdicion)
+        {
+            ActualizarProducto();
+        }
+        else
+        {
+            GuardarProducto();
+        }
+    }
+
+    private void GuardarProducto()
+    {
+        // Validar que el inventario no se repita
+        if (listaProductos.Any(p => p.Inventario == nuevoProducto.Inventario))
+        {
+            mensajeErrorInventario = "El número de inventario se encuentra registrado. Debe ser único.";
+            return;
+        }
+
+        mensajeErrorInventario = null;
+        listaProductos.Add(nuevoProducto);
+        nuevoProducto = new Producto();
+    }
+
+    private void IniciarEdicion(Producto producto)
+    {
+        // Carga los datos al formulario y activa el modo edición
+        modoEdicion = true;
+        productoAEditar = producto;
+        // Copiamos el objeto para no modificar el original hasta "Actualizar"
+        nuevoProducto = new Producto
+        {
+            Inventario = producto.Inventario,
+            Nombre = producto.Nombre,
+            Departamento = producto.Departamento
+        };
+    }
+
+    private void ActualizarProducto()
+    {
+        // Validar duplicados solo si el número de inventario cambió
+        if (nuevoProducto.Inventario != productoAEditar!.Inventario && 
+            listaProductos.Any(p => p.Inventario == nuevoProducto.Inventario))
+        {
+            mensajeErrorInventario = "El número de inventario se encuentra registrado. Debe ser único.";
+            return;
+        }
+        
+        // Actualizar el producto original en la lista
+        productoAEditar!.Inventario = nuevoProducto.Inventario;
+        productoAEditar.Nombre = nuevoProducto.Nombre;
+        productoAEditar.Departamento = nuevoProducto.Departamento;
+
+        // Resetear estado
+        CancelarEdicion();
+    }
+
+    private void CancelarEdicion()
+    {
+        // Limpia el formulario y desactiva el modo edición
+        modoEdicion = false;
+        nuevoProducto = new Producto();
+        productoAEditar = null;
+        mensajeErrorInventario = null;
+    }
+
+    private void EliminarProducto(Producto producto)
+    {
+        listaProductos.Remove(producto);
+    }
+
+    private void MostrarExistencias()
+    {
+        mostrandoExistencias = true;
+    }
+
+    private void MostrarListado()
+    {
+        mostrandoExistencias = false;
+    }
+}

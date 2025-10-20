@@ -1,0 +1,6 @@
+# Archivos y carpetas de compilación de .NET
+**/bin/
+**/obj/
+
+# Ignorar la carpeta .vs generada por Visual Studio
+.vs/
